@@ -5,8 +5,8 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <title>Каталог</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style4.css') }}">
-    <script src="{{ url_for('static', path='js/script3.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ request.app.url_path_for('static', path='css/style4.css') }}">
+    <script src="{{ request.app.url_path_for('static', path='js/script3.js') }}" defer></script>
 </head>
 
 <body>
@@ -178,149 +178,149 @@
         });
     </script>
     <script>
-  // Состояние сортировок/фильтров
-  const sortState = { price: 'none', rating: 'none', minRating: 0 };
+        // Состояние сортировок/фильтров
+        const sortState = {price: 'none', rating: 'none', minRating: 0};
 
-  const toNum = v => {
-    const n = parseFloat(String(v ?? '').replace(',', '.'));
-    return Number.isFinite(n) ? n : NaN;
-  };
+        const toNum = v => {
+            const n = parseFloat(String(v ?? '').replace(',', '.'));
+            return Number.isFinite(n) ? n : NaN;
+        };
 
-  let allCards = [];
+        let allCards = [];
 
-  const cmpBy = (key, dir) => (a, b) => {
-    const va = toNum(a.dataset[key]);
-    const vb = toNum(b.dataset[key]);
-    const aNaN = Number.isNaN(va);
-    const bNaN = Number.isNaN(vb);
-    if (aNaN && bNaN) return 0;
-    if (aNaN) return 1;
-    if (bNaN) return -1;
-    return dir === 'asc' ? (va - vb) : (vb - va);
-  };
+        const cmpBy = (key, dir) => (a, b) => {
+            const va = toNum(a.dataset[key]);
+            const vb = toNum(b.dataset[key]);
+            const aNaN = Number.isNaN(va);
+            const bNaN = Number.isNaN(vb);
+            if (aNaN && bNaN) return 0;
+            if (aNaN) return 1;
+            if (bNaN) return -1;
+            return dir === 'asc' ? (va - vb) : (vb - va);
+        };
 
-  const cmpIdx = (a, b) => (parseInt(a.dataset.idx || '0') - parseInt(b.dataset.idx || '0'));
+        const cmpIdx = (a, b) => (parseInt(a.dataset.idx || '0') - parseInt(b.dataset.idx || '0'));
 
-  function render() {
-    const list = document.getElementById('list');
+        function render() {
+            const list = document.getElementById('list');
 
-    // 1) фильтр по минимальному рейтингу
-    let cards = allCards.filter(c => {
-      const r = toNum(c.dataset.rating);
-      const ratingVal = Number.isNaN(r) ? 0 : r;
-      return ratingVal >= sortState.minRating;
-    });
+            // 1) фильтр по минимальному рейтингу
+            let cards = allCards.filter(c => {
+                const r = toNum(c.dataset.rating);
+                const ratingVal = Number.isNaN(r) ? 0 : r;
+                return ratingVal >= sortState.minRating;
+            });
 
-    // 2) сортировка
-    const havePrice = sortState.price !== 'none';
-    const haveRating = sortState.rating !== 'none';
-    const byPrice = havePrice ? cmpBy('price', sortState.price) : null;
-    const byRating = haveRating ? cmpBy('rating', sortState.rating) : null;
+            // 2) сортировка
+            const havePrice = sortState.price !== 'none';
+            const haveRating = sortState.rating !== 'none';
+            const byPrice = havePrice ? cmpBy('price', sortState.price) : null;
+            const byRating = haveRating ? cmpBy('rating', sortState.rating) : null;
 
-    if (havePrice || haveRating) {
-      cards.sort((a, b) => {
-        if (havePrice) {
-          const p = byPrice(a, b);
-          if (p !== 0) return p;
-          if (haveRating) {
-            const r = byRating(a, b);
-            if (r !== 0) return r;
-          }
-          return cmpIdx(a, b);
+            if (havePrice || haveRating) {
+                cards.sort((a, b) => {
+                    if (havePrice) {
+                        const p = byPrice(a, b);
+                        if (p !== 0) return p;
+                        if (haveRating) {
+                            const r = byRating(a, b);
+                            if (r !== 0) return r;
+                        }
+                        return cmpIdx(a, b);
+                    }
+                    if (haveRating) {
+                        const r = byRating(a, b);
+                        if (r !== 0) return r;
+                        return cmpIdx(a, b);
+                    }
+                    return 0;
+                });
+            }
+
+            // 3) перерисовка
+            const frag = document.createDocumentFragment();
+            cards.forEach(c => frag.appendChild(c));
+            list.innerHTML = '';
+            list.appendChild(frag);
         }
-        if (haveRating) {
-          const r = byRating(a, b);
-          if (r !== 0) return r;
-          return cmpIdx(a, b);
-        }
-        return 0;
-      });
-    }
 
-    // 3) перерисовка
-    const frag = document.createDocumentFragment();
-    cards.forEach(c => frag.appendChild(c));
-    list.innerHTML = '';
-    list.appendChild(frag);
-  }
+        // --- КНОПКИ СОРТ. ПО ЦЕНЕ ---
+        document.getElementById('sort-price-none')?.addEventListener('click', () => {
+            sortState.price = 'none';
+            render();
+        });
+        document.getElementById('sort-price-asc')?.addEventListener('click', () => {
+            sortState.price = 'asc';
+            render();
+        });
+        document.getElementById('sort-price-desc')?.addEventListener('click', () => {
+            sortState.price = 'desc';
+            render();
+        });
 
-  // --- КНОПКИ СОРТ. ПО ЦЕНЕ ---
-  document.getElementById('sort-price-none')?.addEventListener('click', () => {
-    sortState.price = 'none';
-    render();
-  });
-  document.getElementById('sort-price-asc')?.addEventListener('click', () => {
-    sortState.price = 'asc';
-    render();
-  });
-  document.getElementById('sort-price-desc')?.addEventListener('click', () => {
-    sortState.price = 'desc';
-    render();
-  });
+        // --- КНОПКИ СОРТ. ПО РЕЙТИНГУ ---
+        document.getElementById('sort-rating-none')?.addEventListener('click', () => {
+            sortState.rating = 'none';
+            render();
+        });
+        document.getElementById('sort-rating-asc')?.addEventListener('click', () => {
+            sortState.rating = 'asc';
+            render();
+        });
+        document.getElementById('sort-rating-desc')?.addEventListener('click', () => {
+            sortState.rating = 'desc';
+            render();
+        });
 
-  // --- КНОПКИ СОРТ. ПО РЕЙТИНГУ ---
-  document.getElementById('sort-rating-none')?.addEventListener('click', () => {
-    sortState.rating = 'none';
-    render();
-  });
-  document.getElementById('sort-rating-asc')?.addEventListener('click', () => {
-    sortState.rating = 'asc';
-    render();
-  });
-  document.getElementById('sort-rating-desc')?.addEventListener('click', () => {
-    sortState.rating = 'desc';
-    render();
-  });
+        // --- ИНПУТ МИНИМАЛЬНОГО РЕЙТИНГА ---
+        document.getElementById('min-rating')?.addEventListener('input', (e) => {
+            const val = parseFloat(String(e.target.value ?? '').replace(',', '.'));
+            sortState.minRating = Number.isFinite(val) ? Math.max(0, Math.min(5, val)) : 0; // clamp 0..5
+            render();
+        });
 
-  // --- ИНПУТ МИНИМАЛЬНОГО РЕЙТИНГА ---
-  document.getElementById('min-rating')?.addEventListener('input', (e) => {
-    const val = parseFloat(String(e.target.value ?? '').replace(',', '.'));
-    sortState.minRating = Number.isFinite(val) ? Math.max(0, Math.min(5, val)) : 0; // clamp 0..5
-    render();
-  });
+        // --- Загрузка категории: пропускаем товары без title ---
+        document.querySelectorAll(".category-link").forEach(link => {
+            link.addEventListener("click", async (e) => {
+                e.preventDefault();
+                const category = e.target.dataset.category;
 
-  // --- Загрузка категории: пропускаем товары без title ---
-  document.querySelectorAll(".category-link").forEach(link => {
-    link.addEventListener("click", async (e) => {
-      e.preventDefault();
-      const category = e.target.dataset.category;
+                try {
+                    const res = await fetch(`/get_category/${encodeURIComponent(category)}`);
+                    if (!res.ok) throw new Error("Ошибка запроса");
 
-      try {
-        const res = await fetch(`/get_category/${encodeURIComponent(category)}`);
-        if (!res.ok) throw new Error("Ошибка запроса");
+                    const data = await res.json();
+                    const products = data.products;
 
-        const data = await res.json();
-        const products = data.products;
+                    const list = document.getElementById("list");
+                    list.innerHTML = "";
 
-        const list = document.getElementById("list");
-        list.innerHTML = "";
+                    const newCards = [];
 
-        const newCards = [];
+                    products.forEach((rec) => {
+                        const p = rec?.result;
+                        const title = String(p?.title ?? '').trim();
+                        if (!title) return; // <== пропускаем карточку без title
 
-        products.forEach((rec) => {
-          const p = rec?.result;
-          const title = String(p?.title ?? '').trim();
-          if (!title) return; // <== пропускаем карточку без title
+                        const article = document.createElement("article");
+                        article.className = "product-card";
 
-          const article = document.createElement("article");
-          article.className = "product-card";
+                        // последовательная индексация только по реально добавленным карточкам
+                        const order = newCards.length;
+                        article.dataset.idx = String(order);
 
-          // последовательная индексация только по реально добавленным карточкам
-          const order = newCards.length;
-          article.dataset.idx = String(order);
+                        article.dataset.price = p.price ?? "";
+                        article.dataset.listPrice = p.list_price ?? "";
+                        article.dataset.discount = p.discount_percent ?? "";
+                        article.dataset.rank = p.rank ?? "";
+                        article.dataset.rating = p.rating ?? "";
+                        article.dataset.reviews = p.reviews_count ?? "";
+                        article.dataset.prime = p.is_prime ? "true" : "false";
 
-          article.dataset.price = p.price ?? "";
-          article.dataset.listPrice = p.list_price ?? "";
-          article.dataset.discount = p.discount_percent ?? "";
-          article.dataset.rank = p.rank ?? "";
-          article.dataset.rating = p.rating ?? "";
-          article.dataset.reviews = p.reviews_count ?? "";
-          article.dataset.prime = p.is_prime ? "true" : "false";
+                        const fullStars = Math.floor(p.rating || 0);
+                        const emptyStars = 5 - fullStars;
 
-          const fullStars = Math.floor(p.rating || 0);
-          const emptyStars = 5 - fullStars;
-
-          article.innerHTML = `
+                        article.innerHTML = `
             <div class="product-image">
               <img src="${p.main_image_url || ''}" alt="${title}">
             </div>
@@ -336,66 +336,65 @@
             </div>
             <ul class="bullets">
               ${(p.bullet_points || []).map(b =>
-                `<li>${String(b).length > 45 ? String(b).slice(0, 45) + "..." : String(b)}</li>`).join("")}
+                            `<li>${String(b).length > 45 ? String(b).slice(0, 45) + "..." : String(b)}</li>`).join("")}
             </ul>
             <div class="bsr">
               ${(p.best_sellers_rank || []).map(b =>
-                `<div class="bsr-item">#${b.rank} in category ${b.category}</div>`).join("")}
+                            `<div class="bsr-item">#${b.rank} in category ${b.category}</div>`).join("")}
             </div>
             <div class="meta">
               <div class="rating">
                 ${p.rating
-                  ? `<span class="stars" aria-label="${p.rating} из 5">
+                            ? `<span class="stars" aria-label="${p.rating} из 5">
                       ${'★'.repeat(fullStars)}${'☆'.repeat(emptyStars)}
                     </span>
                     <span class="rating-value">${p.rating}</span>`
-                  : ""
-                }
+                            : ""
+                        }
                 ${p.reviews_count ? `<span class="reviews">(${p.reviews_count})</span>` : ""}
               </div>
               ${p.is_prime ? `<span class="prime-badge">Prime</span>` : ""}
             </div>
           `;
 
-          newCards.push(article);
+                        newCards.push(article);
+                    });
+
+                    // обновляем master-список и рендерим
+                    allCards = newCards;
+                    render();
+
+                } catch (err) {
+                    console.error("Ошибка загрузки категории:", err);
+                }
+            });
         });
 
-        // обновляем master-список и рендерим
-        allCards = newCards;
-        render();
+        // --- Инициализация уже имеющихся карточек на странице: оставляем только с непустым title ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const list = document.getElementById('list');
+            let init = Array.from(list.querySelectorAll('.product-card'))
+                .filter(card => {
+                    const t = card.querySelector('.product-title')?.textContent?.trim() || '';
+                    return t.length > 0; // <== только карточки с заголовком
+                });
 
-      } catch (err) {
-        console.error("Ошибка загрузки категории:", err);
-      }
-    });
-  });
+            // перенумеруем и проставим индексы последовательно
+            init.forEach((c, i) => {
+                c.dataset.idx = String(i);
+                const badge = c.querySelector('.rank-badge');
+                if (badge) badge.textContent = `#${i + 1}`;
+            });
 
-  // --- Инициализация уже имеющихся карточек на странице: оставляем только с непустым title ---
-  window.addEventListener('DOMContentLoaded', () => {
-    const list = document.getElementById('list');
-    let init = Array.from(list.querySelectorAll('.product-card'))
-      .filter(card => {
-        const t = card.querySelector('.product-title')?.textContent?.trim() || '';
-        return t.length > 0; // <== только карточки с заголовком
-      });
-
-    // перенумеруем и проставим индексы последовательно
-    init.forEach((c, i) => {
-      c.dataset.idx = String(i);
-      const badge = c.querySelector('.rank-badge');
-      if (badge) badge.textContent = `#${i + 1}`;
-    });
-
-    if (init.length) {
-      allCards = init;
-      render();
-    } else {
-      allCards = [];
-      list.innerHTML = '';
-    }
-  });
-</script>
-
+            if (init.length) {
+                allCards = init;
+                render();
+            } else {
+                allCards = [];
+                list.innerHTML = '';
+            }
+        });
+    </script>
 
 
     <main class="content">
